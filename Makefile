@@ -19,7 +19,7 @@ HEADERS  = include/identity.hpp \
            include/server.hpp \
            include/client.hpp
 
-all: dirs discovery server client tests demo
+all: dirs discovery server client tests demo proxy-server proxy-client
 
 dirs:
 	@mkdir -p $(BINDIR)
@@ -46,3 +46,14 @@ run-tests: tests
 	cd $(BINDIR) && ./identitynet-tests
 
 .PHONY: all dirs discovery server client tests clean run-tests
+
+proxy-server: $(HEADERS) include/proxy_proto.hpp src/main_proxy_server.cpp
+	$(CXX) $(CXXFLAGS) src/main_proxy_server.cpp -o $(BINDIR)/identitynet-proxy-server $(LDFLAGS)
+
+proxy-client: $(HEADERS) include/proxy_proto.hpp src/main_proxy_client.cpp
+	$(CXX) $(CXXFLAGS) src/main_proxy_client.cpp -o $(BINDIR)/identitynet-proxy-client $(LDFLAGS)
+
+proxy: proxy-server proxy-client
+
+proxy-tests: $(HEADERS) include/proxy_proto.hpp tests/test_proxy.cpp
+	$(CXX) $(CXXFLAGS) tests/test_proxy.cpp -o $(BINDIR)/identitynet-proxy-tests $(LDFLAGS)

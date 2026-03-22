@@ -1,18 +1,5 @@
 # ============================================================================
-# docker-compose.yml — Identity Network full stack
-#
-# Services:
-#   discovery  — discovery server (port 7700)
-#   server     — identity server node (port 7701)
-#   client     — interactive client (runs demo commands)
-#   tests      — unit + integration test suite
-#   demo       — full in-process demo (all 4 scenarios)
-#
-# Usage:
-#   docker compose up demo           # run full demo
-#   docker compose up tests          # run test suite
-#   docker compose up discovery      # start discovery only
-#   docker compose up discovery server  # start infrastructure
+# docker-compose.yml — Identity Network full stack + Proxy
 # ============================================================================
 
 services:
@@ -54,26 +41,52 @@ services:
       - discovery
     restart: unless-stopped
 
-  # ── Client (interactive, runs single command then exits) ───────────────────
-  client:
+  # ── Proxy server (run this on your VPS) ───────────────────────────────────
+  proxy-server:
     build:
       context: .
       target: runtime
     image: identitynet:latest
-    container_name: idn-client
-    # Override command at runtime, e.g.:
-    #   docker compose run client identitynet-client ping --node <NODEID>
-    entrypoint: identitynet-client
-    command: show --key /data/client.key
+    container_name: idn-proxy-server
+    command: >-
+      sh -c "identitynet-proxy-server init --key /data/proxy_server.key &&
+             identitynet-proxy-server run --key /data/proxy_server.key
+             --port 7701 --allow-all"
+    ports:
+      - "7701:7701"
     volumes:
-      - client-keys:/data
+      - proxy-server-keys:/data
     networks:
       - idn-net
-    depends_on:
-      - discovery
-      - server
+    restart: unless-stopped
     profiles:
-      - client
+      - proxy-server
+
+  # ── Proxy client (run this on your Windows machine) ───────────────────────
+  # After starting, configure browser SOCKS5: 127.0.0.1:1080
+  proxy-client:
+    build:
+      context: .
+      target: runtime
+    image: identitynet:latest
+    container_name: idn-proxy-client
+    # Set SERVER_PUBKEY env variable before running:
+    #   SERVER_PUBKEY=<base64> docker compose --profile proxy-client up proxy-client
+    command: >-
+      sh -c "identitynet-proxy-client init --key /data/proxy_client.key &&
+             identitynet-proxy-client run
+             --key /data/proxy_client.key
+             --pubkey ${SERVER_PUBKEY:-REPLACE_WITH_SERVER_PUBKEY}
+             --server-host ${SERVER_HOST:-127.0.0.1}
+             --server-port ${SERVER_PORT:-7701}
+             --proxy-port 1080"
+    ports:
+      - "1080:1080"
+    volumes:
+      - proxy-client-keys:/data
+    network_mode: host
+    profiles:
+      - proxy-client
 
   # ── Test suite ─────────────────────────────────────────────────────────────
   tests:
@@ -88,7 +101,7 @@ services:
     profiles:
       - tests
 
-  # ── Full in-process demo (all-in-one, no external deps needed) ─────────────
+  # ── Full in-process demo ───────────────────────────────────────────────────
   demo:
     build:
       context: .
@@ -108,3 +121,5 @@ networks:
 volumes:
   server-keys:
   client-keys:
+  proxy-server-keys:
+  proxy-client-keys:

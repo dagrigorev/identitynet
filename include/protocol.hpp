@@ -59,6 +59,13 @@ enum class MsgType : uint8_t {
     APP_DATA          = 0x24,
     APP_DATA_ACK      = 0x25,
 
+    // Proxy tunnel messages (encrypted, multiplexed streams)
+    PROXY_CONNECT     = 0x30,
+    PROXY_CONNECTED   = 0x31,
+    PROXY_DATA        = 0x32,
+    PROXY_CLOSE       = 0x33,
+    PROXY_ERROR       = 0x34,
+
     // Error / control
     ERROR             = 0xF0,
     GOODBYE           = 0xFF,
