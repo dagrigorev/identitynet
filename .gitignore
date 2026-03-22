@@ -1,0 +1,49 @@
+# ── Build output ─────────────────────────────────────────────────────────────
+build/
+*.o
+*.a
+*.so
+*.out
+
+# ── Identity key files (NEVER commit private keys) ───────────────────────────
+*.key
+*.key.pub
+*.pem
+*.p12
+*.pfx
+
+# ── ACL and config files with sensitive data ─────────────────────────────────
+*.acl
+server.json
+client.json
+
+# ── Runtime data ─────────────────────────────────────────────────────────────
+/data/
+
+# ── Docker ───────────────────────────────────────────────────────────────────
+.docker/
+
+# ── OS artifacts ─────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# ── Editor / IDE ─────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.orig
+.clangd
+compile_commands.json
+
+# ── Archives ─────────────────────────────────────────────────────────────────
+*.tar.gz
+*.zip
+*.tar
+
+# ── Test artifacts ───────────────────────────────────────────────────────────
+/tmp/
+*.log

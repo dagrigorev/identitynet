@@ -1,0 +1,110 @@
+# ============================================================================
+# docker-compose.yml — Identity Network full stack
+#
+# Services:
+#   discovery  — discovery server (port 7700)
+#   server     — identity server node (port 7701)
+#   client     — interactive client (runs demo commands)
+#   tests      — unit + integration test suite
+#   demo       — full in-process demo (all 4 scenarios)
+#
+# Usage:
+#   docker compose up demo           # run full demo
+#   docker compose up tests          # run test suite
+#   docker compose up discovery      # start discovery only
+#   docker compose up discovery server  # start infrastructure
+# ============================================================================
+
+services:
+
+  # ── Discovery server ───────────────────────────────────────────────────────
+  discovery:
+    build:
+      context: .
+      target: runtime
+    image: identitynet:latest
+    container_name: idn-discovery
+    command: identitynet-discovery --port 7700
+    ports:
+      - "7700:7700"
+    networks:
+      idn-net:
+        aliases:
+          - discovery
+    restart: unless-stopped
+
+  # ── Identity server node ───────────────────────────────────────────────────
+  server:
+    build:
+      context: .
+      target: runtime
+    image: identitynet:latest
+    container_name: idn-server
+    command: >-
+      sh -c "identitynet-server init --key /data/server.key &&
+             identitynet-server run --key /data/server.key --port 7701
+             --host 0.0.0.0 --discovery discovery:7700 --allow-all"
+    ports:
+      - "7701:7701"
+    volumes:
+      - server-keys:/data
+    networks:
+      - idn-net
+    depends_on:
+      - discovery
+    restart: unless-stopped
+
+  # ── Client (interactive, runs single command then exits) ───────────────────
+  client:
+    build:
+      context: .
+      target: runtime
+    image: identitynet:latest
+    container_name: idn-client
+    # Override command at runtime, e.g.:
+    #   docker compose run client identitynet-client ping --node <NODEID>
+    entrypoint: identitynet-client
+    command: show --key /data/client.key
+    volumes:
+      - client-keys:/data
+    networks:
+      - idn-net
+    depends_on:
+      - discovery
+      - server
+    profiles:
+      - client
+
+  # ── Test suite ─────────────────────────────────────────────────────────────
+  tests:
+    build:
+      context: .
+      target: runtime
+    image: identitynet:latest
+    container_name: idn-tests
+    command: identitynet-tests
+    networks:
+      - idn-net
+    profiles:
+      - tests
+
+  # ── Full in-process demo (all-in-one, no external deps needed) ─────────────
+  demo:
+    build:
+      context: .
+      target: runtime
+    image: identitynet:latest
+    container_name: idn-demo
+    command: identitynet-demo
+    networks:
+      - idn-net
+    profiles:
+      - demo
+
+networks:
+  idn-net:
+    driver: bridge
+
+volumes:
+  server-keys:
+  client-keys:

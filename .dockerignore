@@ -1,0 +1,21 @@
+# Docker build context exclusions
+build/
+*.key
+*.key.pub
+*.acl
+.git/
+.gitignore
+*.tar.gz
+*.zip
+
+# OS artifacts
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Editor artifacts
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
